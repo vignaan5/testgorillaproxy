@@ -20,14 +20,15 @@ document.addEventListener('click', async (event) => {
       const response = await fetchResponse(prompt + promptRules);
       console.log('API response received:', response);
 
-      // Click the correct option based on the response
+      // Find and animate the correct option
       optionsElements.forEach((optionElement) => {
         const optionText = optionElement.innerText.trim().toLowerCase();
         console.log('Checking option:', optionText);
 
         if (response.trim().toLowerCase() === optionText) {
-          console.log('Clicking option:', optionElement);
-          optionElement.click();
+          console.log('Animating cursor to option:', optionElement);
+          animateCursorToElement(optionElement, event);
+          setTimeout(() => optionElement.click(), 1000); // Delay click to allow animation
         }
       });
     } else {
@@ -60,6 +61,29 @@ async function fetchResponse(prompt) {
     console.error('Error fetching response:', error);
     return 'Error fetching response';
   }
+}
+
+function animateCursorToElement(element, event) {
+  const rect = element.getBoundingClientRect();
+  const cursor = document.createElement('div');
+  cursor.style.position = 'fixed';
+  cursor.style.width = '0';
+  cursor.style.height = '0';
+  cursor.style.border = '5px solid transparent';
+  cursor.style.borderTopColor = 'black';
+  cursor.style.borderRadius = '50%';
+  cursor.style.zIndex = '1000';
+  cursor.style.left = `${event.clientX}px`;
+  cursor.style.top = `${event.clientY}px`;
+  cursor.style.transition = 'left 1s ease, top 1s ease';
+  document.body.appendChild(cursor);
+
+  requestAnimationFrame(() => {
+    cursor.style.left = `${rect.left + rect.width / 2}px`;
+    cursor.style.top = `${rect.top + rect.height / 2}px`;
+  });
+
+  setTimeout(() => document.body.removeChild(cursor), 1000);
 }
 
 const promptRules = "\n 1) just print the correct option and nothing else. No extra info except correct option";
