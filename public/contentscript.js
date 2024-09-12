@@ -8,34 +8,59 @@ document.addEventListener('click', async (event) => {
 
     if (questionElement && optionsElements.length > 0) {
       const questionText = questionElement.innerText.trim();
+      const questionImages = Array.from(questionElement.querySelectorAll('img')).map(img => img.src);
       const optionsText = Array.from(optionsElements).map(option => option.innerText.trim());
 
       console.log('Extracted Question:', questionText);
+      console.log('Question Images:', questionImages);
       console.log('Extracted Options:', optionsText);
 
-      // Send the question and options to the Perplexity API
-      const prompt = `${questionText}\nOptions:\n${optionsText.join('\n')}`;
-      console.log('Sending prompt to API:', prompt);
+      // Check if only the question contains images
+      if (questionImages.length > 0 && optionsText.every(opt => !opt.includes('<img'))) {
+        // Upload images and include URLs in the prompt
+        const uploadedImages = await Promise.all(questionImages.map(uploadImage));
+        const prompt = `${questionText}\nImages: ${uploadedImages.join(', ')}\nOptions:\n${optionsText.join('\n')}`;
+        console.log('Sending prompt to API:', prompt);
 
-      const response = await fetchResponse(prompt + promptRules);
-      console.log('API response received:', response);
+        const response = await fetchResponse(prompt + promptRules);
+        console.log('API response received:', response);
 
-      // Find and animate the correct option
-      optionsElements.forEach((optionElement) => {
-        const optionText = optionElement.innerText.trim().toLowerCase();
-        console.log('Checking option:', optionText);
+        // Click the correct option based on the response
+        optionsElements.forEach((optionElement) => {
+          const optionText = optionElement.innerText.trim().toLowerCase();
+          console.log('Checking option:', optionText);
 
-        if (response.trim().toLowerCase() === optionText) {
-          console.log('Animating cursor to option:', optionElement);
-          animateCursorToElement(optionElement);
-          setTimeout(() => optionElement.click(), 1000); // Delay click to allow animation
-        }
-      });
+          if (response.trim().toLowerCase() === optionText) {
+            console.log('Clicking option:', optionElement);
+            optionElement.click();
+          }
+        });
+      }
     } else {
       console.log('Question or options not found');
     }
   }
 });
+
+async function uploadImage(imageUrl) {
+  try {
+    const response = await fetch(imageUrl);
+    const blob = await response.blob();
+    const formData = new FormData();
+    formData.append('file', blob, 'image.jpg');
+
+    const uploadResponse = await fetch('https://your-upload-endpoint.com/upload', {
+      method: 'POST',
+      body: formData
+    });
+
+    const data = await uploadResponse.json();
+    return data.url; // Assuming the response contains the URL of the uploaded image
+  } catch (error) {
+    console.error('Error uploading image:', error);
+    return '';
+  }
+}
 
 async function fetchResponse(prompt) {
   try {
@@ -61,27 +86,6 @@ async function fetchResponse(prompt) {
     console.error('Error fetching response:', error);
     return 'Error fetching response';
   }
-}
-
-function animateCursorToElement(element) {
-  const rect = element.getBoundingClientRect();
-  const cursor = document.createElement('div');
-  cursor.style.position = 'fixed';
-  cursor.style.width = '0';
-  cursor.style.height = '0';
-  cursor.style.border = '5px solid transparent'; // Transparent border
-  cursor.style.zIndex = '1000';
-  cursor.style.left = `${window.innerWidth / 2}px`;
-  cursor.style.top = `${window.innerHeight / 2}px`;
-  cursor.style.transition = 'left 1s ease, top 1s ease';
-  document.body.appendChild(cursor);
-
-  requestAnimationFrame(() => {
-    cursor.style.left = `${rect.left + rect.width / 2}px`;
-    cursor.style.top = `${rect.top + rect.height / 2}px`;
-  });
-
-  setTimeout(() => document.body.removeChild(cursor), 1000);
 }
 
 const promptRules = "\njust print the correct option and nothing else. No extra info except correct option";
