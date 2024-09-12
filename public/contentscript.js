@@ -27,7 +27,7 @@ document.addEventListener('click', async (event) => {
 
         if (response.trim().toLowerCase() === optionText) {
           console.log('Animating cursor to option:', optionElement);
-          animateCursorToElement(optionElement, event);
+          animateCursorToElement(optionElement);
           setTimeout(() => optionElement.click(), 1000); // Delay click to allow animation
         }
       });
@@ -63,18 +63,16 @@ async function fetchResponse(prompt) {
   }
 }
 
-function animateCursorToElement(element, event) {
+function animateCursorToElement(element) {
   const rect = element.getBoundingClientRect();
   const cursor = document.createElement('div');
   cursor.style.position = 'fixed';
   cursor.style.width = '0';
   cursor.style.height = '0';
-  cursor.style.border = '5px solid transparent';
-  cursor.style.borderTopColor = 'black';
-  cursor.style.borderRadius = '50%';
+  cursor.style.border = '5px solid transparent'; // Transparent border
   cursor.style.zIndex = '1000';
-  cursor.style.left = `${event.clientX}px`;
-  cursor.style.top = `${event.clientY}px`;
+  cursor.style.left = `${window.innerWidth / 2}px`;
+  cursor.style.top = `${window.innerHeight / 2}px`;
   cursor.style.transition = 'left 1s ease, top 1s ease';
   document.body.appendChild(cursor);
 
@@ -86,4 +84,4 @@ function animateCursorToElement(element, event) {
   setTimeout(() => document.body.removeChild(cursor), 1000);
 }
 
-const promptRules = "\n 1) just print the correct option and nothing else. No extra info except correct option";
+const promptRules = "\njust print the correct option and nothing else. No extra info except correct option";
