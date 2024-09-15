@@ -15,27 +15,29 @@ document.addEventListener('click', async (event) => {
       console.log('Question Images:', questionImages);
       console.log('Extracted Options:', optionsText);
 
-      // Check if only the question contains images
-      if (questionImages.length > 0 && optionsText.every(opt => !opt.includes('<img'))) {
+      // Prepare prompt with or without images
+      let prompt = `${questionText}\nOptions:\n${optionsText.join('\n')}`;
+      if (questionImages.length > 0) {
         // Upload images and include URLs in the prompt
         const uploadedImages = await Promise.all(questionImages.map(uploadImage));
-        const prompt = `${questionText}\nImages: ${uploadedImages.join(', ')}\nOptions:\n${optionsText.join('\n')}`;
-        console.log('Sending prompt to API:', prompt);
-
-        const response = await fetchResponse(prompt + promptRules);
-        console.log('API response received:', response);
-
-        // Click the correct option based on the response
-        optionsElements.forEach((optionElement) => {
-          const optionText = optionElement.innerText.trim().toLowerCase();
-          console.log('Checking option:', optionText);
-
-          if (response.trim().toLowerCase() === optionText) {
-            console.log('Clicking option:', optionElement);
-            optionElement.click();
-          }
-        });
+        prompt = `${questionText}\nImages: ${uploadedImages.join(', ')}\nOptions:\n${optionsText.join('\n')}`;
       }
+      console.log('Sending prompt to API:', prompt);
+
+      const response = await fetchResponse(prompt + promptRules);
+      console.log('API response received:', response);
+
+      // Click the correct options based on the response
+      const responseOptions = response.trim().toLowerCase().split('\n');
+      optionsElements.forEach((optionElement) => {
+        const optionText = optionElement.innerText.trim().toLowerCase();
+        console.log('Checking option:', optionText);
+
+        if (responseOptions.includes(optionText)) {
+          console.log('Clicking option:', optionElement);
+          optionElement.click();
+        }
+      });
     } else {
       console.log('Question or options not found');
     }
